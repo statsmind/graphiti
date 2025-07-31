@@ -24,6 +24,7 @@ import httpx
 from diskcache import Cache
 from pydantic import BaseModel
 from tenacity import retry, retry_if_exception, stop_after_attempt, wait_random_exponential
+from langchain_core.output_parsers import PydanticOutputParser
 
 from ..prompts.models import Message
 from .config import DEFAULT_MAX_TOKENS, LLMConfig, ModelSize
@@ -137,11 +138,11 @@ class LLMClient(ABC):
             max_tokens = self.max_tokens
 
         if response_model is not None:
-            serialized_model = json.dumps(response_model.model_json_schema())
+            serialized_model = PydanticOutputParser(pydantic_object=response_model).get_format_instructions()
             messages[
                 -1
             ].content += (
-                f'\n\nRespond with a JSON object in the following format:\n\n{serialized_model}'
+                f'\n\n{serialized_model}'
             )
 
         # Add multilingual extraction instructions
